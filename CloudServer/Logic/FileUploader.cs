@@ -64,3 +64,75 @@ public static class FileUploader {
         loadFile.FinishLoading();
     }
 }
+
+// FTP file upload example
+// https://docs.microsoft.com/en-us/dotnet/framework/network-programming/how-to-upload-files-with-ftp?redirectedfrom=MSDN
+// using System;
+// using System.IO;
+// using System.Net;
+// using System.Threading.Tasks;
+
+// namespace Examples.System.Net
+// {
+//     public class WebRequestGetExample
+//     {
+//         public static async Task Main()
+//         {
+//             // Get the object used to communicate with the server.
+//             FtpWebRequest request = (FtpWebRequest)WebRequest.Create("ftp://www.contoso.com/test.htm");
+//             request.Method = WebRequestMethods.Ftp.UploadFile;
+
+//             // This example assumes the FTP site uses anonymous logon.
+//             request.Credentials = new NetworkCredential("anonymous", "janeDoe@contoso.com");
+
+//             // Copy the contents of the file to the request stream.
+//             using (FileStream fileStream = File.Open("testfile.txt", FileMode.Open, FileAccess.Read))
+//             {
+//                 using (Stream requestStream = request.GetRequestStream())
+//                 {
+//                     await fileStream.CopyToAsync(requestStream);
+//                     using (FtpWebResponse response = (FtpWebResponse)request.GetResponse())
+//                     {
+//                         Console.WriteLine($"Upload File Complete, status {response.StatusDescription}");
+//                     }
+//                 }
+//            }
+//         }
+//     }
+// }
+
+
+// FTP file download example
+// https://docs.microsoft.com/en-us/dotnet/framework/network-programming/how-to-download-files-with-ftp?source=recommendations
+// using System;
+// using System.IO;
+// using System.Net;
+
+// namespace Examples.System.Net
+// {
+//     public class WebRequestGetExample
+//     {
+//         public static void Main ()
+//         {
+//             // Get the object used to communicate with the server.
+//             FtpWebRequest request = (FtpWebRequest)WebRequest.Create("ftp://www.contoso.com/test.htm");
+//             request.Method = WebRequestMethods.Ftp.DownloadFile;
+
+//             // This example assumes the FTP site uses anonymous logon.
+//             request.Credentials = new NetworkCredential("anonymous","janeDoe@contoso.com");
+
+//             FtpWebResponse response = (FtpWebResponse)request.GetResponse();
+
+//             Stream responseStream = response.GetResponseStream();
+//             StreamReader reader = new StreamReader(responseStream);
+//             Console.WriteLine(reader.ReadToEnd());
+
+//             Console.WriteLine($"Download Complete, status {response.StatusDescription}");
+
+//             reader.Close();
+//             response.Close();
+//         }
+//     }
+// }
+
+// FTP in .NET: https://docs.microsoft.com/en-us/dotnet/framework/network-programming/ftp?source=recommendations
