@@ -1,0 +1,17 @@
+﻿@page "/ftp-upload"
+@using System.Net
+@using CloudServer.Logic
+@using Limilabs.FTP.Client
+<h3>FTP Upload</h3>
+
+<button @onclick="Upload">Upload via ftp</button>
+
+@code {
+
+
+    private async Task Upload()
+    {
+        FileUploader.Ftp();
+    }
+
+}
