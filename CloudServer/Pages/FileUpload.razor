@@ -4,16 +4,24 @@
 @using System.Diagnostics
 @using CloudServer.Logic
 @using CloudServer.Components
+@using File=CloudServer.Logic.File
 @inject IWebHostEnvironment Environment
 
 <h3>Upload Files</h3>
 
 <p>
     <label>
-        Upload up to @FileUploader.Settings.MaxAllowedFiles of up to @FileUploader.Settings.MaxFileSizeBytes bytes:
+        Upload up to @FileManager.Settings.MaxAllowedFiles of up to @FileManager.Settings.MaxFileSizeBytes bytes:
         <InputFile OnChange="@LoadFiles" multiple/>
     </label>
 </p>
+
+<EditForm EditContext="new EditContext(new object())">
+    <label>
+        Use FTP:
+        <InputCheckbox @bind-Value="_useFtp"></InputCheckbox>
+    </label>
+</EditForm>
 
 
 @if (_loadingFiles == null) {
@@ -22,7 +30,7 @@
 else {
     <ol>
         @foreach (var file in _loadingFiles) {
-            <UploadingFile LoadFile="@file"/>
+            <UploadingFileComponent File="@file"/>
         }
     </ol>
 }
@@ -34,33 +42,21 @@ else {
 @code {
     private string? _uploadDirectory;
     private string UploadDirectory => _uploadDirectory ??= Path.Combine(Environment.WebRootPath, "unsafe-uploads");
-    private LoadFile[]? _loadingFiles;
+    private File[]? _loadingFiles;
         private const int ProgressRefreshRate = 100;
 
     // Statistics
     private double _uploadingTimeSeconds;
+    private bool _useFtp;
 
-    private async Task LoadFiles(InputFileChangeEventArgs e) {
-        _uploadingTimeSeconds = 0;
-        var sw = Stopwatch.StartNew();
-
-        Directory.CreateDirectory(UploadDirectory);
-
-        _loadingFiles = e
-            .GetMultipleFiles(FileUploader.Settings.MaxAllowedFiles)
-            .Select(file => new LoadFile(file))
-            .ToArray();
-
-        var fileTasks = new Task[_loadingFiles.Length + 1];
+    private async Task SignalRLoadFiles() {
+        var fileTasks = new Task[_loadingFiles!.Length + 1];
         fileTasks[_loadingFiles.Length] = Refresh();
         for (var i = 0; i < _loadingFiles.Length; i++) {
-            fileTasks[i] = FileUploader.UploadFileAsync(_loadingFiles[i], UploadDirectory);
+            fileTasks[i] = FileManager.SignalR.UploadFileAsync(_loadingFiles[i], UploadDirectory);
         }
 
         await Task.WhenAll(fileTasks);
-
-        sw.Stop();
-        _uploadingTimeSeconds = sw.Elapsed.TotalSeconds;
     }
 
     private async Task Refresh() {
@@ -70,4 +66,36 @@ else {
         }
     }
 
+    private async Task LoadFiles(InputFileChangeEventArgs e) {
+        _uploadingTimeSeconds = 0;
+        var sw = Stopwatch.StartNew();
+
+        Directory.CreateDirectory(UploadDirectory);
+
+        _loadingFiles = e
+            .GetMultipleFiles(FileManager.Settings.MaxAllowedFiles)
+            .Select(file => new File(file))
+            .ToArray();
+
+        if (_useFtp) {
+            await FtpLoadFiles();
+        }
+        else {
+            await SignalRLoadFiles();
+        }
+
+        sw.Stop();
+        _uploadingTimeSeconds = sw.Elapsed.TotalSeconds;
+    }
+
+    private async Task FtpLoadFiles() {
+        var fileTasks = new Task[_loadingFiles!.Length + 1];
+        fileTasks[_loadingFiles.Length] = Refresh();
+        for (var i = 0; i < _loadingFiles.Length; i++) {
+            var localI = i;
+            fileTasks[i] = Task.Run(() => FileManager.FileTransferProtocol.UploadFileAsync(_loadingFiles[localI], UploadDirectory));
+        }
+
+        await Task.WhenAll(fileTasks);
+    }
 }

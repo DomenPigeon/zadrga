@@ -1,0 +1,49 @@
+﻿@namespace CloudServer.Components
+@using System.Text
+@using CloudServer.Logic
+
+<label>
+    <b>Name:</b> @File.BrowserFile.Name
+</label>
+<br/>
+<label>
+    <b>Status:</b> @GetStatus()
+</label>
+<br/>
+<label>
+    <b>Size:</b> @(File.BrowserFile.Size / FileManager.MegaByte) MB
+</label>
+<div class="progress">
+    @{
+        var progress = $"{File.ProgressPercentage:F0}%";
+    }
+    <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: @progress" aria-valuenow="@progress" aria-valuemin="0" aria-valuemax="100">@progress</div>
+</div>
+<br/>
+
+@code {
+
+    [Parameter]
+    public File File { get; set; } = null!;
+
+    private MarkupString GetStatus() {
+        var sb = new StringBuilder();
+        switch (File.Status) {
+            case FileUploadStatus.None:
+                return new MarkupString("");
+            case FileUploadStatus.Uploading:
+                sb.Append("<span style=\"color:orange;\"><b>Uploading</b></span>");
+                break;
+            case FileUploadStatus.Uploaded:
+                sb.Append("<span style=\"color:green;\"><b>Uploaded</b></span>");
+                break;
+            case FileUploadStatus.Error:
+                sb.Append("<span style=\"color:red;\"><b>Error</b></span>");
+                break;
+            default:
+                throw new ArgumentOutOfRangeException();
+        }
+        return new MarkupString(sb.ToString());
+    }
+
+}
