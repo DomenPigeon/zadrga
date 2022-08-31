@@ -78,6 +78,8 @@ public static class FileManager {
             client.Close();
         }
 
+        // TODO: It would be a good idea to put this whole code in try finally block to make sure that memory is always returned to the pool.
+        // TODO: Try refactoring this code as it almost a duplicate of the upper one
         private static async Task UploadFileInternalAsync(Ftp client, File file, string directory) {
             file.Status = FileUploadStatus.Uploading;
             var path = Path.Combine(directory, file.BrowserFile.Name);
