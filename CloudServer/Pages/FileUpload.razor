@@ -43,11 +43,11 @@ else {
     private string? _uploadDirectory;
     private string UploadDirectory => _uploadDirectory ??= Path.Combine(Environment.WebRootPath, "unsafe-uploads");
     private File[]? _loadingFiles;
-        private const int ProgressRefreshRate = 100;
+        private const int ProgressRefreshRateMs = 1000;
 
     // Statistics
     private double _uploadingTimeSeconds;
-    private bool _useFtp;
+    private bool _useFtp = true;
 
     private async Task SignalRLoadFiles() {
         var fileTasks = new Task[_loadingFiles!.Length + 1];
@@ -61,7 +61,7 @@ else {
 
     private async Task Refresh() {
         while (_loadingFiles?.Any(file => file.Status is FileUploadStatus.Uploading or FileUploadStatus.None) ?? false) {
-            await Task.Delay(ProgressRefreshRate);
+            await Task.Delay(ProgressRefreshRateMs);
             await InvokeAsync(StateHasChanged);
         }
     }
@@ -93,7 +93,7 @@ else {
         fileTasks[_loadingFiles.Length] = Refresh();
         for (var i = 0; i < _loadingFiles.Length; i++) {
             var localI = i;
-            fileTasks[i] = Task.Run(() => FileManager.FileTransferProtocol.UploadFileAsync(_loadingFiles[localI], UploadDirectory));
+            fileTasks[i] = FileManager.FileTransferProtocol.UploadFileAsync(_loadingFiles[localI], UploadDirectory);
         }
 
         await Task.WhenAll(fileTasks);

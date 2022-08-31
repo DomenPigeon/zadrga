@@ -68,17 +68,46 @@ public static class FileManager {
     }
 
     public static class FileTransferProtocol {
-        public static void UploadFileAsync(File file, string directory) {
+        public static async Task UploadFileAsync(File file, string directory) {
             using var client = new Ftp();
             client.Connect("localhost"); // or ConnectSSL for SSL/TLS
             client.Login("anonymous", "domen@test.com");
 
-            var path = Path.Combine(directory, file.BrowserFile.Name);
-            using var stream = file.BrowserFile.OpenReadStream(Settings.MaxFileSizeBytes);
-            file.Status = FileUploadStatus.Uploading;
-            client.Upload(path, stream);
+            await UploadFileInternalAsync(client, file, directory);
+
             client.Close();
-            
+        }
+
+        private static async Task UploadFileInternalAsync(Ftp client, File file, string directory) {
+            file.Status = FileUploadStatus.Uploading;
+            var path = Path.Combine(directory, file.BrowserFile.Name);
+            const int maxAllowedMemoryChunkSizePerFileBytes = MegaByte * 10;
+
+            await using var stream = file.BrowserFile.OpenReadStream(Settings.MaxFileSizeBytes);
+
+            var defaultMemorySize = ArrayPool<byte>.Shared.Rent(maxAllowedMemoryChunkSizePerFileBytes);
+            var processedBytes = 0L;
+            while (processedBytes < file.BrowserFile.Size) {
+                var memorySize = (int) Math.Min(file.BrowserFile.Size - processedBytes, maxAllowedMemoryChunkSizePerFileBytes);
+                var memory = memorySize == maxAllowedMemoryChunkSizePerFileBytes ? defaultMemorySize : ArrayPool<byte>.Shared.Rent(memorySize);
+
+                var readBytes = await stream.ReadAsync(memory, 0, memorySize);
+                while (readBytes < memorySize) {
+                    readBytes += await stream.ReadAsync(memory, readBytes, memorySize - readBytes);
+                }
+
+                client.Upload(path, processedBytes, memory);
+                processedBytes += readBytes;
+
+                if (memory != defaultMemorySize) {
+                    ArrayPool<byte>.Shared.Return(memory);
+                }
+
+                file.ProgressPercentage = (float) processedBytes / file.BrowserFile.Size * 100;
+            }
+
+            ArrayPool<byte>.Shared.Return(defaultMemorySize);
+
             file.FinishLoading();
         }
     }

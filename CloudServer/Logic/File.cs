@@ -7,7 +7,7 @@ public class File {
     public Exception? Error;
     public FileUploadStatus Status = FileUploadStatus.None;
 
-    public float ProgressPercentage;
+    public double ProgressPercentage;
 
     public File(IBrowserFile browserFile) {
         BrowserFile = browserFile;
