@@ -10,7 +10,7 @@ builder.Services.Configure<DotNetFileSystemOptions>(opt => opt.RootPath = Path.C
 builder.Services.AddFtpServer(builder => builder
     .UseDotNetFileSystem()
     .EnableAnonymousAuthentication());
-builder.Services.Configure<FtpServerOptions>(opt => opt.ServerAddress = "localhost");
+builder.Services.Configure<FtpServerOptions>(opt => opt.ServerAddress = "20.50.2.41");
 
 var app = builder.Build();
 
