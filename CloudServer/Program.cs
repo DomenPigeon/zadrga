@@ -1,3 +1,4 @@
+using CloudServer.Logic;
 using FubarDev.FtpServer;
 using FubarDev.FtpServer.FileSystem.DotNet;
 
@@ -10,7 +11,8 @@ builder.Services.Configure<DotNetFileSystemOptions>(opt => opt.RootPath = Path.C
 builder.Services.AddFtpServer(builder => builder
     .UseDotNetFileSystem()
     .EnableAnonymousAuthentication());
-builder.Services.Configure<FtpServerOptions>(opt => opt.ServerAddress = "20.50.2.41");
+// builder.Services.Configure<FtpServerOptions>(opt => opt.ServerAddress = "20.50.2.41");
+builder.Services.AddHostedService<HostedFtpService>();
 
 var app = builder.Build();
 
